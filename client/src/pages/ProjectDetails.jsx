@@ -2,148 +2,184 @@
 import { useParams, Link } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { StoreContext } from '../App';
-import { getCurrentUser, isProjectPM, isJuryForDeliverable, deliverableGrades, computeSummary } from '../services/store';
+import { getCurrentUser, isProjectPM, isJuryForProject, deliverableGrades, computeSummary } from '../services/store';
 
 const ProjectDetails = () => {
   const { id } = useParams();
   const { state, actions } = useContext(StoreContext);
   const project = state.projects.find(p => p.id === parseInt(id, 10));
   const user = getCurrentUser(state);
+
   if (!project) return <div style={{padding: 20}}>Project not found (ID: {id})</div>;
 
-  const [newDeliverable, setNewDeliverable] = useState({ title: '', dueDate: '' });
-  const [mediaForm, setMediaForm] = useState({ deliverableId: 0, videoUrl: '', demoUrl: '' });
-  const [juryForm, setJuryForm] = useState({ deliverableId: 0, count: 3 });
-  const [gradeInputs, setGradeInputs] = useState({}); // per deliverableId
+  const [urlInput, setUrlInput] = useState(project.url || '');
+  const [gradeInput, setGradeInput] = useState('');
+  const [juryPassword, setJuryPassword] = useState('');
+  const [isJuryAuthenticated, setIsJuryAuthenticated] = useState(false);
 
   const isPM = isProjectPM(state, project, state.currentUserId);
-  const deliverables = state.deliverables.filter(d => d.projectId === project.id);
+  const isJury = isJuryForProject(state, project.id, state.currentUserId);
+  const grades = deliverableGrades(state, project.id);
+  const summary = computeSummary(grades.map(g => g.value));
+  const myGrade = grades.find(g => g.graderId === state.currentUserId);
+  const canModify = myGrade ? ((new Date() - new Date(myGrade.submittedAt)) / (1000*60)) <= 1440 : false;
 
-  const onAddDeliverable = (e) => {
-    e.preventDefault();
-    if (!isPM) return alert('Only PM can add deliverables');
-    if (!newDeliverable.title || !newDeliverable.dueDate) return alert('Title and due date required');
-    actions.addDeliverable(project.id, newDeliverable);
-    setNewDeliverable({ title: '', dueDate: '' });
+  const onAddURL = () => {
+    if (!urlInput) return alert('Enter a URL');
+    actions.addURL(project.id, urlInput);
+    alert('URL saved');
   };
 
-  const onAddMedia = (e) => {
-    e.preventDefault();
-    if (!isPM) return alert('Only PM can add media');
-    if (!mediaForm.deliverableId) return alert('Select a deliverable');
-    actions.addMedia(mediaForm.deliverableId, { videoUrl: mediaForm.videoUrl, demoUrl: mediaForm.demoUrl });
-    setMediaForm({ deliverableId: 0, videoUrl: '', demoUrl: '' });
-  };
-
-  const onSelectJury = (e) => {
-    e.preventDefault();
-    if (!isPM && user.role !== 'professor') return alert('Only PM or professor can select jury');
-    if (!juryForm.deliverableId) return alert('Select a deliverable');
-    actions.selectJury(juryForm.deliverableId, juryForm.count);
-  };
-
-  const onSubmitGrade = (deliverableId) => {
-    const val = gradeInputs[deliverableId];
-    if (val === undefined || val === null || val === '') return alert('Enter a grade');
-    if (!isJuryForDeliverable(state, deliverableId, state.currentUserId)) return alert('Only jury can grade this deliverable');
-    actions.submitGrade(deliverableId, Number(val));
+  const onSubmitGrade = () => {
+    const val = gradeInput;
+    if (val === '' || val === null) return alert('Enter a grade');
+    if (!isJury) return alert('Only jury can grade this project');
+    if (!isJuryAuthenticated) return alert('Please authenticate first');
+    actions.submitGrade(project.id, Number(val));
     alert('Grade submitted');
+    setGradeInput('');
+  };
+
+  const onAuthenticateJury = () => {
+    const expectedPassword = user.role === 'jury' ? 'jury123' : user.name.toLowerCase() + '123';
+    if (juryPassword === expectedPassword) {
+      setIsJuryAuthenticated(true);
+      alert('Authentication successful! You can now grade this project.');
+    } else {
+      alert('Incorrect password. Please try again.');
+      setJuryPassword('');
+    }
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <Link to="/dashboard">← Back to Dashboard</Link>
-      <h1>Project: {project.title}</h1>
-      <p><strong>Description:</strong> {project.description}</p>
+    <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", background: '#f5f7fa', minHeight: '100vh' }}>
+      <Link to="/client/dashboard" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: '500', marginBottom: '1.5rem', display: 'inline-block', transition: 'all 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#1565c0'} onMouseLeave={(e) => e.target.style.color = '#1976d2'}>← Back to Dashboard</Link>
+      <h1 style={{ color: '#333', fontSize: '32px', fontWeight: '700', marginBottom: '0.5rem' }}>Project: {project.title}</h1>
+      <p style={{ color: '#666', fontSize: '14px', margin: '0 0 2rem 0' }}><strong>Description:</strong> {project.description}</p>
 
       {isPM && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
-          <form onSubmit={onAddDeliverable} style={{ border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
-            <h3>Add Deliverable</h3>
-            <input type="text" placeholder="Title" value={newDeliverable.title} onChange={(e)=>setNewDeliverable({ ...newDeliverable, title: e.target.value })} style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-            <input type="date" placeholder="Due Date" value={newDeliverable.dueDate} onChange={(e)=>setNewDeliverable({ ...newDeliverable, dueDate: e.target.value })} style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-            <button type="submit" style={{ padding: '8px 12px' }}>Add</button>
-          </form>
-
-          <form onSubmit={onAddMedia} style={{ border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
-            <h3>Add Media (video/demo)</h3>
-            <select value={mediaForm.deliverableId} onChange={(e)=>setMediaForm({ ...mediaForm, deliverableId: parseInt(e.target.value, 10) })} style={{ width: '100%', padding: 8, marginBottom: 8 }}>
-              <option value={0}>Select deliverable</option>
-              {deliverables.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
-            </select>
-            <input type="url" placeholder="Video URL" value={mediaForm.videoUrl} onChange={(e)=>setMediaForm({ ...mediaForm, videoUrl: e.target.value })} style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-            <input type="url" placeholder="Demo URL" value={mediaForm.demoUrl} onChange={(e)=>setMediaForm({ ...mediaForm, demoUrl: e.target.value })} style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-            <button type="submit" style={{ padding: '8px 12px' }}>Save</button>
-          </form>
-
-          <form onSubmit={onSelectJury} style={{ border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
-            <h3>Select Jury (after due date)</h3>
-            <select value={juryForm.deliverableId} onChange={(e)=>setJuryForm({ ...juryForm, deliverableId: parseInt(e.target.value, 10) })} style={{ width: '100%', padding: 8, marginBottom: 8 }}>
-              <option value={0}>Select deliverable</option>
-              {deliverables.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
-            </select>
-            <input type="number" min={1} max={10} value={juryForm.count} onChange={(e)=>setJuryForm({ ...juryForm, count: parseInt(e.target.value, 10) })} style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-            <button type="submit" style={{ padding: '8px 12px' }}>Randomize Jury</button>
-          </form>
+        <div style={{ background: 'white', border: 'none', padding: '24px', borderRadius: '12px', marginTop: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', borderLeft: '4px solid #1976d2' }}>
+          <h3 style={{ color: '#1976d2', margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>🔗 Add/Update URL</h3>
+          <input
+            type="url"
+            placeholder="https://..."
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            style={{ width: '100%', padding: '10px 12px', marginBottom: '12px', borderRadius: '6px', border: '1px solid #ddd', fontFamily: 'inherit', fontSize: '14px', transition: 'all 0.2s' }}
+            onFocus={(e) => { e.target.style.borderColor = '#1976d2'; e.target.style.boxShadow = '0 0 0 3px rgba(25,118,210,0.1)'; }}
+            onBlur={(e) => { e.target.style.borderColor = '#ddd'; e.target.style.boxShadow = 'none'; }}
+          />
+          <button onClick={onAddURL} style={{ padding: '10px 20px', background: '#1976d2', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s', fontSize: '14px' }} onMouseEnter={(e) => { e.target.style.background = '#1565c0'; e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 4px 12px rgba(25,118,210,0.3)'; }} onMouseLeave={(e) => { e.target.style.background = '#1976d2'; e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = 'none'; }}>Save URL</button>
         </div>
       )}
 
-      <div style={{ marginTop: '24px' }}>
-        <h2>Deliverables</h2>
-        {deliverables.length === 0 && <p>No deliverables yet.</p>}
-        {deliverables.map(d => {
-          const g = deliverableGrades(state, d.id);
-          const summary = computeSummary(g.map(x => x.value));
-          const isJury = isJuryForDeliverable(state, d.id, state.currentUserId);
-          const myGrade = g.find(x => x.graderId === state.currentUserId);
-          const canModify = myGrade ? ((new Date() - new Date(myGrade.submittedAt)) / (1000*60)) <= 1440 : false;
-          return (
-            <div key={d.id} style={{ border: '1px solid #ccc', padding: '12px', borderRadius: '8px', marginBottom: '12px', background: '#fff' }}>
-              <h3>{d.title}</h3>
-              <p><strong>Due:</strong> {d.dueDate}</p>
-              {(d.media.videoUrl || d.media.demoUrl) && (
-                <p>
-                  {d.media.videoUrl && <>🎬 <a href={d.media.videoUrl} target="_blank" rel="noreferrer">Video</a>{' '}</>}
-                  {d.media.demoUrl && <>🚀 <a href={d.media.demoUrl} target="_blank" rel="noreferrer">Demo</a></>}
-                </p>
-              )}
-              {d.juryUserIds?.length ? <p>Jury members assigned: {d.juryUserIds.length}</p> : <p>No jury assigned yet.</p>}
+      <div style={{ marginTop: '24px', background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <h2 style={{ color: '#333', margin: '0 0 16px 0', fontSize: '22px', fontWeight: '600' }}>📋 Project Details</h2>
+        {project.url && (
+          <p style={{ color: '#666', margin: '0 0 12px 0', fontSize: '14px' }}>
+            🔗 <a href={project.url} target="_blank" rel="noreferrer" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: '500' }}>View Project</a>
+          </p>
+        )}
+        {project.juryUserIds?.length ? (
+          <p style={{ color: '#666', margin: '0 0 12px 0', fontSize: '14px' }}><strong>Jury Members:</strong> {project.juryUserIds.length} assigned</p>
+        ) : (
+          <p style={{ color: '#999', margin: '0 0 12px 0', fontSize: '14px', fontStyle: 'italic' }}>No jury assigned yet.</p>
+        )}
 
-              <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #ddd' }}>
-                <strong>Summary (anonymous):</strong>{' '}
-                {summary.count ? (
-                  <span>{summary.count} grades • avg {summary.average} (min {summary.min}, max {summary.max})</span>
-                ) : (
-                  <span>No grades yet.</span>
-                )}
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '2px solid #eee' }}>
+          <h3 style={{ color: '#666', margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600' }}>Grade Summary (Anonymous)</h3>
+          {summary.count ? (
+            <div style={{ background: '#f0f7ff', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #4caf50' }}>
+              <strong style={{ color: '#2e7d32', fontSize: '15px' }}>{summary.count}</strong> <span style={{ color: '#666', fontSize: '14px' }}>grades submitted</span> • 
+              <strong style={{ color: '#2e7d32', fontSize: '15px', marginLeft: '8px' }}>{summary.average}</strong> <span style={{ color: '#666', fontSize: '14px' }}>average</span> • 
+              <span style={{ color: '#999', fontSize: '13px', marginLeft: '8px' }}>range {summary.min}–{summary.max}</span>
+            </div>
+          ) : (
+            <em style={{ color: '#999', fontSize: '14px' }}>No grades submitted yet.</em>
+          )}
+        </div>
+      </div>
+
+      {isJury ? (
+        <div style={{ marginTop: '24px', background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', borderLeft: '4px solid #d32f2f' }}>
+          <h3 style={{ color: '#d32f2f', margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600' }}>📝 Your Anonymous Grade</h3>
+          
+          {!isJuryAuthenticated ? (
+            <div style={{ background: '#fff3cd', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #ffc107' }}>
+              <h4 style={{ color: '#856404', margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600' }}>🔒 Authentication Required</h4>
+              <p style={{ color: '#856404', margin: '0 0 16px 0', fontSize: '14px' }}>Please enter your password to access grading:</p>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <input
+                  type="password"
+                  value={juryPassword}
+                  onChange={(e) => setJuryPassword(e.target.value)}
+                  placeholder="Enter password"
+                  style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #ffc107', fontFamily: 'inherit', fontSize: '14px', width: '200px', transition: 'all 0.2s' }}
+                  onKeyPress={(e) => { if (e.key === 'Enter') onAuthenticateJury(); }}
+                  onFocus={(e) => { e.target.style.borderColor = '#ff9800'; e.target.style.boxShadow = '0 0 0 3px rgba(255,152,0,0.1)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#ffc107'; e.target.style.boxShadow = 'none'; }}
+                />
+                <button onClick={onAuthenticateJury} style={{ padding: '10px 20px', background: '#ff9800', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s', fontSize: '14px' }} onMouseEnter={(e) => { e.target.style.background = '#f57c00'; e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 4px 12px rgba(255,152,0,0.3)'; }} onMouseLeave={(e) => { e.target.style.background = '#ff9800'; e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = 'none'; }}>
+                  Authenticate
+                </button>
               </div>
-
-              {isJury ? (
-                <div style={{ marginTop: 12 }}>
-                  <p>You are on this deliverable's jury. Submit your anonymous grade.</p>
-                  <input type="number" min={1} max={10} step={0.01} value={gradeInputs[d.id] ?? ''} onChange={(e)=>setGradeInputs({ ...gradeInputs, [d.id]: e.target.value })} style={{ padding: 8, width: 100 }} />
-                  <button onClick={()=>onSubmitGrade(d.id)} style={{ marginLeft: 8, padding: '6px 10px' }}>Submit</button>
-                  {myGrade && (
-                    <div style={{ marginTop: 8 }}>
-                      <span>Your grade: {myGrade.value}</span>
-                      {canModify ? (
-                        <span style={{ marginLeft: 8 }}>
-                          <input type="number" min={1} max={10} step={0.01} placeholder="Modify" value={gradeInputs[`mod-${d.id}`] ?? ''} onChange={(e)=>setGradeInputs({ ...gradeInputs, ["mod-"+d.id]: e.target.value })} style={{ padding: 6, width: 100 }} />
-                          <button style={{ marginLeft: 6, padding: '6px 10px' }} onClick={()=>{ actions.modifyGrade(myGrade.id, Number(gradeInputs[`mod-${d.id}`])); alert('Grade modified'); }}>Save</button>
-                        </span>
-                      ) : (
-                        <em style={{ marginLeft: 8 }}>(modification window expired)</em>
-                      )}
-                    </div>
-                  )}
+            </div>
+          ) : (
+            <>
+              <p style={{ color: '#666', margin: '0 0 16px 0', fontSize: '14px' }}>Submit a grade from 1 to 10 (up to 2 decimal places).</p>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  step={0.01}
+                  value={gradeInput}
+                  onChange={(e) => setGradeInput(e.target.value)}
+                  style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #ddd', fontFamily: 'inherit', fontSize: '14px', width: '120px', transition: 'all 0.2s' }}
+                  placeholder="8.50"
+                  onFocus={(e) => { e.target.style.borderColor = '#d32f2f'; e.target.style.boxShadow = '0 0 0 3px rgba(211,47,47,0.1)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#ddd'; e.target.style.boxShadow = 'none'; }}
+                />
+                <button onClick={onSubmitGrade} style={{ padding: '10px 20px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s', fontSize: '14px' }} onMouseEnter={(e) => { e.target.style.background = '#45a049'; e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 4px 12px rgba(76,175,80,0.3)'; }} onMouseLeave={(e) => { e.target.style.background = '#4caf50'; e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = 'none'; }}>
+                  Submit
+                </button>
+              </div>
+            </>
+          )}
+          {myGrade && (
+            <div style={{ marginTop: '16px', padding: '16px', background: '#e8f5e9', borderRadius: '8px', borderLeft: '4px solid #4caf50' }}>
+              <span style={{ color: '#333', fontSize: '14px' }}>Your grade: <strong style={{ color: '#2e7d32', fontSize: '16px' }}>{myGrade.value}</strong></span>
+              {canModify ? (
+                <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    step={0.01}
+                    placeholder="New grade"
+                    value={gradeInput}
+                    onChange={(e) => setGradeInput(e.target.value)}
+                    style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid #4caf50', fontFamily: 'inherit', fontSize: '13px', width: '100px' }}
+                  />
+                  <button
+                    style={{ padding: '8px 16px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '13px', transition: 'all 0.2s' }}
+                    onMouseEnter={(e) => { e.target.style.background = '#45a049'; e.target.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={(e) => { e.target.style.background = '#4caf50'; e.target.style.transform = 'translateY(0)'; }}
+                    onClick={() => { actions.modifyGrade(myGrade.id, Number(gradeInput)); alert('Grade modified'); }}
+                  >Update</button>
+                  <em style={{ color: '#666', fontSize: '12px', fontStyle: 'italic' }}>(within 24h window)</em>
                 </div>
               ) : (
-                <em style={{ display: 'block', marginTop: 8 }}>You are not on the jury for this deliverable.</em>
+                <em style={{ display: 'block', marginTop: '8px', color: '#d32f2f', fontSize: '12px' }}>⏱️ Modification window expired (24h passed)</em>
               )}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ marginTop: '24px', padding: '16px', background: '#fff3cd', borderRadius: '8px', borderLeft: '4px solid #ffc107', color: '#856404', fontSize: '14px' }}>
+          ⚠️ You are not on the jury for this project.
+        </div>
+      )}
     </div>
   );
 };
