@@ -1,9 +1,10 @@
 // src/pages/AddProject.jsx
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { StoreContext } from '../App';
 
-// Accept the "onAdd" function
-const AddProject = ({ onAdd }) => {
+const AddProject = () => {
+  const { actions } = useContext(StoreContext);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
@@ -17,10 +18,7 @@ const AddProject = ({ onAdd }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // CALL THE FUNCTION FROM APP.JSX
-    onAdd(formData);
-    
+    actions.addProject({ title: formData.title, description: formData.description });
     alert("Project Added!");
     navigate('/dashboard');
   };
