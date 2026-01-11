@@ -26,7 +26,7 @@ const Dashboard = () => {
             <div key={p.id} style={{ border: 'none', padding: '12px', margin: '8px 0', background: '#f9f9f9', borderRadius: '8px', borderLeft: '4px solid #d32f2f', transition: 'all 0.2s' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#333', fontSize: '16px', fontWeight: '600' }}>{p.title}</h3>
               <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '13px' }}>{p.description}</p>
-              <Link to={`/client/project/${p.id}`}>
+              <Link to={`/project/${p.id}`}>
                 <button style={{ background: '#d32f2f', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }} onMouseEnter={(e)=>{e.target.style.background='#b71c1c'; e.target.style.transform='translateY(-2px)'}} onMouseLeave={(e)=>{e.target.style.background='#d32f2f'; e.target.style.transform='translateY(0)'}}>
                   Grade Now
                 </button>
@@ -38,7 +38,7 @@ const Dashboard = () => {
         {isStudent && <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h2 style={{ color: '#1976d2', margin: 0, fontSize: '20px', fontWeight: '600' }}>📂 My Projects</h2>
-            <Link to="/client/add-project">
+            <Link to="/add-project">
               <button style={{ background: '#1976d2', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }} onMouseEnter={(e)=>{e.target.style.background='#1565c0'; e.target.style.transform='translateY(-2px)'}} onMouseLeave={(e)=>{e.target.style.background='#1976d2'; e.target.style.transform='translateY(0)'}}>
                 + Add New
               </button>
@@ -49,7 +49,7 @@ const Dashboard = () => {
             <div key={p.id} style={{ border: 'none', padding: '12px', margin: '8px 0', background: '#f0f7ff', borderRadius: '8px', borderLeft: '4px solid #1976d2', transition: 'all 0.2s' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#333', fontSize: '16px', fontWeight: '600' }}>{p.title}</h3>
               <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '13px' }}>{p.description}</p>
-              <Link to={`/client/project/${p.id}`}>
+              <Link to={`/project/${p.id}`}>
                 <button style={{ background: '#1976d2', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }} onMouseEnter={(e)=>{e.target.style.background='#1565c0'; e.target.style.transform='translateY(-2px)'}} onMouseLeave={(e)=>{e.target.style.background='#1976d2'; e.target.style.transform='translateY(0)'}}>
                   Open
                 </button>
@@ -93,7 +93,7 @@ const Dashboard = () => {
             ) : (
               <div style={{ marginTop: 8 }}>
                 <em style={{ color: '#999' }}>You haven't graded this project yet.</em>
-                <Link to={`/client/project/${item.projectId}`} style={{ marginLeft: 12, color: '#1976d2', textDecoration: 'none', fontWeight: '500' }}>Open</Link>
+                <Link to={`/project/${item.projectId}`} style={{ marginLeft: 12, color: '#1976d2', textDecoration: 'none', fontWeight: '500' }}>Open</Link>
               </div>
             )}
           </div>

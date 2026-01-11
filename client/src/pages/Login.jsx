@@ -31,7 +31,7 @@ const Login = () => {
 
     // Set current user and navigate
     actions.setCurrentUser(user.id);
-    navigate('/client/dashboard');
+    navigate('/dashboard');
   };
 
   return (

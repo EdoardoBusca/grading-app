@@ -53,7 +53,7 @@ const ProjectDetails = () => {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", background: '#f5f7fa', minHeight: '100vh' }}>
-      <Link to="/client/dashboard" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: '500', marginBottom: '1.5rem', display: 'inline-block', transition: 'all 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#1565c0'} onMouseLeave={(e) => e.target.style.color = '#1976d2'}>← Back to Dashboard</Link>
+      <Link to="/dashboard" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: '500', marginBottom: '1.5rem', display: 'inline-block', transition: 'all 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#1565c0'} onMouseLeave={(e) => e.target.style.color = '#1976d2'}>← Back to Dashboard</Link>
       <h1 style={{ color: '#333', fontSize: '32px', fontWeight: '700', marginBottom: '0.5rem' }}>Project: {project.title}</h1>
       <p style={{ color: '#666', fontSize: '14px', margin: '0 0 2rem 0' }}><strong>Description:</strong> {project.description}</p>
 

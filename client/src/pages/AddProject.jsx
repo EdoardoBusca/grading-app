@@ -30,12 +30,12 @@ const AddProject = () => {
     e.preventDefault();
     actions.addProject({ title: formData.title, description: formData.description });
     alert("Project Added!");
-    navigate('/client/dashboard');
+    navigate('/dashboard');
   };
 
   return (
     <div style={{ maxWidth: '600px', margin: '2rem auto', padding: '2rem', borderRadius: '12px', background: 'white', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
-      <Link to="/client/dashboard" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: '500', marginBottom: '1rem', display: 'inline-block', transition: 'all 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#1565c0'} onMouseLeave={(e) => e.target.style.color = '#1976d2'}>← Back to Dashboard</Link>
+      <Link to="/dashboard" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: '500', marginBottom: '1rem', display: 'inline-block', transition: 'all 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#1565c0'} onMouseLeave={(e) => e.target.style.color = '#1976d2'}>← Back to Dashboard</Link>
       <h1 style={{ color: '#333', fontSize: '28px', fontWeight: '700', margin: '0 0 1.5rem 0' }}>📂 Add New Project</h1>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>

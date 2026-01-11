@@ -56,9 +56,9 @@ function UserSwitcher() {
         ))}
       </select>
       <span style={{ marginLeft: 'auto', display: 'flex', gap: '24px' }}>
-        <Link to="/client/add-project" style={{ color: 'white', textDecoration: 'none', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s', paddingBottom: '4px', borderBottom: '2px solid transparent' }} onMouseEnter={(e) => { e.target.style.opacity = '0.8'; e.target.style.borderBottomColor = 'white'; }} onMouseLeave={(e) => { e.target.style.opacity = '1'; e.target.style.borderBottomColor = 'transparent'; }}>+ Add Project</Link>
-        <Link to="/client/professor" style={{ color: 'white', textDecoration: 'none', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s', paddingBottom: '4px', borderBottom: '2px solid transparent' }} onMouseEnter={(e) => { e.target.style.opacity = '0.8'; e.target.style.borderBottomColor = 'white'; }} onMouseLeave={(e) => { e.target.style.opacity = '1'; e.target.style.borderBottomColor = 'transparent'; }}>📊 Results</Link>
-        <Link to="/client/login" onClick={() => actions.logout()} style={{ color: 'white', textDecoration: 'none', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s', paddingBottom: '4px', borderBottom: '2px solid transparent' }} onMouseEnter={(e) => { e.target.style.opacity = '0.8'; e.target.style.borderBottomColor = 'white'; }} onMouseLeave={(e) => { e.target.style.opacity = '1'; e.target.style.borderBottomColor = 'transparent'; }}>🚪 Logout</Link>
+        <Link to="/add-project" style={{ color: 'white', textDecoration: 'none', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s', paddingBottom: '4px', borderBottom: '2px solid transparent' }} onMouseEnter={(e) => { e.target.style.opacity = '0.8'; e.target.style.borderBottomColor = 'white'; }} onMouseLeave={(e) => { e.target.style.opacity = '1'; e.target.style.borderBottomColor = 'transparent'; }}>+ Add Project</Link>
+        <Link to="/professor" style={{ color: 'white', textDecoration: 'none', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s', paddingBottom: '4px', borderBottom: '2px solid transparent' }} onMouseEnter={(e) => { e.target.style.opacity = '0.8'; e.target.style.borderBottomColor = 'white'; }} onMouseLeave={(e) => { e.target.style.opacity = '1'; e.target.style.borderBottomColor = 'transparent'; }}>📊 Results</Link>
+        <Link to="/login" onClick={() => actions.logout()} style={{ color: 'white', textDecoration: 'none', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s', paddingBottom: '4px', borderBottom: '2px solid transparent' }} onMouseEnter={(e) => { e.target.style.opacity = '0.8'; e.target.style.borderBottomColor = 'white'; }} onMouseLeave={(e) => { e.target.style.opacity = '1'; e.target.style.borderBottomColor = 'transparent'; }}>🚪 Logout</Link>
       </span>
     </div>
   );
@@ -66,20 +66,21 @@ function UserSwitcher() {
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useContext(StoreContext);
-  return isAuthenticated ? children : <Navigate to="/client/login" replace />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 function App() {
+  console.log('App component rendering');
   return (
     <BrowserRouter>
       <StoreProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/client/login" replace />} />
-          <Route path="/client/login" element={<Login />} />
-          <Route path="/client/dashboard" element={<ProtectedRoute><UserSwitcher /><Dashboard /></ProtectedRoute>} />
-          <Route path="/client/project/:id" element={<ProtectedRoute><UserSwitcher /><ProjectDetails /></ProtectedRoute>} />
-          <Route path="/client/add-project" element={<ProtectedRoute><UserSwitcher /><AddProject /></ProtectedRoute>} />
-          <Route path="/client/professor" element={<ProtectedRoute><UserSwitcher /><ProfessorView /></ProtectedRoute>} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<ProtectedRoute><UserSwitcher /><Dashboard /></ProtectedRoute>} />
+          <Route path="/project/:id" element={<ProtectedRoute><UserSwitcher /><ProjectDetails /></ProtectedRoute>} />
+          <Route path="/add-project" element={<ProtectedRoute><UserSwitcher /><AddProject /></ProtectedRoute>} />
+          <Route path="/professor" element={<ProtectedRoute><UserSwitcher /><ProfessorView /></ProtectedRoute>} />
         </Routes>
       </StoreProvider>
     </BrowserRouter>
